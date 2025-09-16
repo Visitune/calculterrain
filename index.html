@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculateur Plan d'Audit (v14 - Final & Corrigé)</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root{--brand:#4f46e5;--warm:#f59e0b;--bg-1:#f0f7ff;--bg-2:#ffffff;--text:#1a1a1a;--muted:#6b7280;--ok:#10b981;--warn:#facc15;--bad:#ef4444;}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:"Segoe UI",Tahoma,sans-serif;background:radial-gradient(80% 80% at 50% 20%,var(--bg-1) 0%,var(--bg-2) 60%);min-height:100vh;color:var(--text)}
+    .container{max-width:1400px;margin:0 auto;padding:24px}
+    .header{text-align:center;margin-bottom:32px}
+    h1{font-size:2.25rem;font-weight:800}
+    .yellow-section{background:#fffbeb;border:1px solid #fde68a;border-left:6px solid var(--warm);border-radius:12px;padding:18px;margin:22px 0}
+    .yellow-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;align-items:end}
+    .input-group{display:flex;flex-direction:column;gap:6px}
+    label{font-size:.9rem;color:#92400e;font-weight:600}
+    .yellow-input{background:#fef3c7;border:1px solid #f59e0b;padding:11px 14px;font-size:16px;border-radius:10px}
+    .yellow-input:focus{outline:none;box-shadow:0 0 0 3px rgba(245,158,11,.25)}
+    .btn{display:inline-flex;gap:8px;align-items:center;border:none;padding:11px 16px;font-weight:700;cursor:pointer;transition:.2s;border-radius:10px}
+    .btn-primary{background:var(--brand);color:#fff}.btn-primary:hover{background:#4338ca}
+    .btn-outline{background:#fff;border:1px solid #d1d5db}.btn-outline:hover{background:#f9fafb}
+    .planning{background:#fff;border-radius:16px;box-shadow:0 18px 35px -14px rgba(0,0,0,.15);padding:24px;margin:24px 0}
+    .section-h{display:flex;gap:10px;align-items:center;margin-bottom:14px}
+    .section-h svg{width:24px;height:24px;color:var(--brand)}
+    .table-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;border:1px solid #e5e7eb}
+    th,td{border:1px solid #e5e7eb;padding:8px;text-align:center;vertical-align:middle}
+    th{background:#f9fafb;font-weight:700;font-size:.9rem}
+    .morning-h{background:#dbeafe}.aft-h{background:#fed7aa}.total-h{background:#dcfce7}.terrain-h{background:#fef3c7}
+    .time-wrapper{display:flex;align-items:center;justify-content:center;gap:8px}
+    .time{width:auto;min-width:70px;border:none;background:transparent;text-align:center;font-size:.95rem;padding:4px;border-radius:6px}
+    .time-icon{width:18px;height:18px;color:#374151}
+    .time:focus{outline:none;background:#f3f4f6;box-shadow:inset 0 0 0 2px var(--brand)}
+    .row-total td{font-weight:800;font-size:1.1rem;padding:12px 8px}
+    .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin:20px 0}
+    .card{background:#fff;border-radius:14px;box-shadow:0 14px 28px -16px rgba(0,0,0,.12);padding:18px;text-align:center}
+    .card h3{font-size:1rem;margin-bottom:6px}.card .val{font-size:1.8rem;font-weight:900}
+    .indicator-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:16px;}
+    .indicator-card{padding:12px;border-radius:10px;border-left:6px solid}
+    .indicator-card.ok{background:#d1fae5;border-color:var(--ok);color:#065f46}
+    .indicator-card.warn{background:#fef9c3;border-color:var(--warn);color:#713f12}
+    .indicator-card.bad{background:#fee2e2;border-color:var(--bad);color:#991b1b}
+    .day-label{font-weight:700;min-width:110px}
+    .duration-cell{font-weight:600;font-size:1.05rem}
+    .remove-btn{background:transparent;border:none;cursor:pointer;padding:5px}.remove-btn svg{width:20px;height:20px;color:#ef4444;transition:.2s}.remove-btn:hover svg{color:#b91c1c}
+    
+    .terrain-slider-cell{padding:5px 12px;min-width:220px;height:70px}
+    .terrain-times{font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:4px}
+    .terrain-duration{font-size:0.8rem;color:var(--muted);font-weight:600}
+    .slider-container{position:relative;width:100%;height:20px;margin-top:2px}
+    .slider-track,.slider-range{position:absolute;left:0;right:0;top:7px;height:6px;border-radius:3px}
+    .slider-track{background-color:#e5e7eb}
+    .slider-range{background-color:var(--warm)}
+    input[type=range]{-webkit-appearance:none;background:transparent;position:absolute;left:0;width:100%;pointer-events:none}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:auto;width:20px;height:20px;border-radius:50%;background-color:var(--warm);cursor:pointer;border:3px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+    input[type=range]:disabled::-webkit-slider-thumb{background-color:#9ca3af;cursor:not-allowed}
+    .export{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:24px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><h1>Calculateur Plan d'Audit</h1></div>
+    <div class="yellow-section">
+      <div class="yellow-grid">
+        <div class="input-group">
+          <label for="totalDays">Nombre de jours d'audit théorique</label>
+          <input id="totalDays" type="number" min="0" step="0.25" class="yellow-input" placeholder="Ex: 3.25" value="3.25"/>
+        </div>
+        <div class="input-group">
+          <label>Temps terrain requis (50% du théorique)</label>
+          <input id="terrainTime" class="yellow-input" readonly/>
+        </div>
+        <div class="input-group"><label>Actions</label><div class="btn-row">
+          <button id="modelBtn" class="btn btn-primary">Charger le modèle</button>
+          <button id="resetBtn" class="btn btn-outline">Réinitialiser</button>
+        </div></div>
+      </div>
+    </div>
+    <div class="planning">
+        <div class="section-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg><h2>Planning détaillé</h2></div>
+        <div class="table-wrap">
+            <table id="planningTable">
+                <thead>
+                    <tr><th rowspan="2">Jour</th><th colspan="2">Audit Matin</th><th class="terrain-h">Terrain Matin</th><th colspan="2">Audit Après-midi</th><th class="terrain-h">Terrain Après-midi</th><th colspan="2" class="total-h">Totaux Jour</th><th rowspan="2"></th></tr>
+                    <tr><th>Début</th><th>Fin</th><th class="terrain-h">Durée / Horaires</th><th>Début</th><th>Fin</th><th class="terrain-h">Durée / Horaires</th><th>Audit</th><th class="terrain-h">Terrain</th></tr>
+                </thead>
+                <tbody id="planningBody"></tbody>
+                <tfoot>
+                    <tr class="row-total" id="totalRow"></tr>
+                    <tr><td colspan="10" style="padding:12px;background:#fafafa"><div class="btn-row" style="justify-content:center">
+                        <button class="btn btn-outline" onclick="addDayRow(1)">+ Ajouter une journée</button>
+                        <button class="btn btn-outline" onclick="addDayRow(0.5)">+ Ajouter une demi-journée</button>
+                    </div></td></tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <div class="summary">
+      <div class="card"><h3>Durée mandatée théorique</h3><div id="theoreticalHours" class="val">0.00h</div></div>
+      <div class="card"><h3>Durée totale réalisée</h3><div id="realizedHours" class="val">0.00h</div></div>
+      <div class="card"><h3>Durée terrain réalisée</h3><div id="terrainHours" class="val">0.00h</div></div>
+    </div>
+    <div class="planning">
+      <div class="section-h"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.93 23.32a.75.75 0 01-.64-.8L12.55 16H9.75a.75.75 0 01-.7-1.02l4.47-8.82a.75.75 0 011.38.53L13.45 8h2.8a.75.75 0 01.7 1.02l-4.47 8.82a.75.75 0 01-.63.48h-.02zM12 1.5a10.5 10.5 0 100 21 10.5 10.5 0 000-21z"/></svg><h2>Indicateurs de conformité</h2></div>
+       <div class="indicator-grid">
+         <div id="terrainIndicator" class="indicator-card"></div>
+         <div id="durationIndicator" class="indicator-card"></div>
+       </div>
+    </div>
+    <div class="export">
+      <button class="btn" style="background:#dc2626;color:#fff" onclick="exportToPDF()">Export PDF</button>
+      <button class="btn" style="background:#059669;color:#fff" onclick="exportToExcel()">Export Excel</button>
+    </div>
+  </div>
+
+  <script>
+    let state = { days: [] };
+    const emptyDay = (fraction = 1) => ({ fraction, morningAuditStart: "", morningAuditEnd: "", morningTerrainStartMinutes: 0, morningTerrainEndMinutes: 0, afternoonAuditStart: "", afternoonAuditEnd: "", afternoonTerrainStartMinutes: 0, afternoonTerrainEndMinutes: 0 });
+    
+    // --- FONCTIONS DE CALCUL CORRIGÉES ET FIABLES ---
+    const timeToDec = t => {
+        if (!t) return 0;
+        const [h, m] = t.split(':').map(Number);
+        return (h || 0) + (m || 0) / 60;
+    };
+    const decToTime = dec => dec === null || typeof dec === 'undefined' ? "" : `${String(Math.floor(dec)).padStart(2, '0')}:${String(Math.round((dec - Math.floor(dec)) * 60)).padStart(2, '0')}`;
+    const dur = (start, end) => Math.max(0, timeToDec(end) - timeToDec(start));
+
+    function calculateAndRender() {
+        let totalAudit = 0, totalTerrain = 0;
+        state.days.forEach(d => {
+            d.morningAuditDuration = dur(d.morningAuditStart, d.morningAuditEnd);
+            d.afternoonAuditDuration = dur(d.afternoonAuditStart, d.afternoonAuditEnd);
+            const morningMaxMinutes = Math.round(d.morningAuditDuration * 60);
+            d.morningTerrainStartMinutes = Math.min(d.morningTerrainStartMinutes, morningMaxMinutes);
+            d.morningTerrainEndMinutes = Math.min(d.morningTerrainEndMinutes, morningMaxMinutes);
+            const afternoonMaxMinutes = Math.round(d.afternoonAuditDuration * 60);
+            d.afternoonTerrainStartMinutes = Math.min(d.afternoonTerrainStartMinutes, afternoonMaxMinutes);
+            d.afternoonTerrainEndMinutes = Math.min(d.afternoonTerrainEndMinutes, afternoonMaxMinutes);
+            d.dayAuditTotal = d.morningAuditDuration + d.afternoonAuditDuration;
+            d.dayTerrainTotal = Math.max(0, (d.morningTerrainEndMinutes - d.morningTerrainStartMinutes) / 60) + Math.max(0, (d.afternoonTerrainEndMinutes - d.afternoonTerrainStartMinutes) / 60);
+            totalAudit += d.dayAuditTotal;
+            totalTerrain += d.dayTerrainTotal;
+        });
+        const theoreticalDays = parseFloat(document.getElementById('totalDays').value) || 0;
+        const theoreticalHours = theoreticalDays * 8;
+        document.getElementById('terrainTime').value = (theoreticalHours / 2).toFixed(2) + "h";
+        const tb = document.getElementById("planningBody");
+        tb.innerHTML = "";
+        const clockIcon=`<svg class="time-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.25 5.75a.75.75 0 00-1.5 0v5.5a.75.75 0 00.22.53l2.5 2.5a.75.75 0 001.06-1.06L9 10.81V5.75z" clip-rule="evenodd" /></svg>`;
+        const removeIcon=`<svg fill="currentColor" viewBox="0 0 16 16"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>`;
+        const timeInput=(idx,key,val)=>`<div class="time-wrapper"><input type="time" class="time" value="${val||''}" onchange="updateState(${idx},'${key}',this.value)">${clockIcon}</div>`;
+        const sliderInput = (idx, period) => {
+            const auditStartDec = timeToDec(state.days[idx][`${period}AuditStart`]);
+            const auditDuration = state.days[idx][`${period}AuditDuration`] || 0;
+            const maxMinutes = Math.round(auditDuration * 60);
+            const startMinutes = state.days[idx][`${period}TerrainStartMinutes`];
+            const endMinutes = state.days[idx][`${period}TerrainEndMinutes`];
+            const startPct = maxMinutes > 0 ? (startMinutes / maxMinutes) * 100 : 0;
+            const endPct = maxMinutes > 0 ? (endMinutes / maxMinutes) * 100 : 0;
+            const terrainStart = auditDuration > 0 ? decToTime(auditStartDec + startMinutes / 60) : "";
+            const terrainEnd = auditDuration > 0 ? decToTime(auditStartDec + endMinutes / 60) : "";
+            const terrainDuration = Math.max(0, (endMinutes - startMinutes) / 60);
+            return `<div class="terrain-slider-cell"><div class="terrain-times">${terrainStart||'--:--'} - ${terrainEnd||'--:--'}</div><div class="slider-container"><div class="slider-track"></div><div class="slider-range" style="left:${startPct}%; right:${100-endPct}%"></div><input type="range" step="15" min="0" max="${maxMinutes}" value="${startMinutes}" oninput="updateTerrainSlider(${idx},'${period}','start',this.value)" onchange="calculateAndRender()"><input type="range" step="15" min="0" max="${maxMinutes}" value="${endMinutes}" oninput="updateTerrainSlider(${idx},'${period}','end',this.value)" onchange="calculateAndRender()"></div><div class="terrain-duration">(${terrainDuration.toFixed(2)}h)</div></div>`;
+        };
+        state.days.forEach((d, idx) => {
+            const dayLabel = `Jour ${idx + 1}` + (d.fraction < 1 ? ` (${d.fraction.toFixed(2)} jour)` : '');
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td class="day-label">${dayLabel}</td><td>${timeInput(idx,'morningAuditStart',d.morningAuditStart)}</td><td>${timeInput(idx,'morningAuditEnd',d.morningAuditEnd)}</td><td>${sliderInput(idx,'morning')}</td><td>${timeInput(idx,'afternoonAuditStart',d.afternoonAuditStart)}</td><td>${timeInput(idx,'afternoonAuditEnd',d.afternoonAuditEnd)}</td><td>${sliderInput(idx,'afternoon')}</td><td class="duration-cell">${d.dayAuditTotal.toFixed(2)}h</td><td class="duration-cell terrain-h">${d.dayTerrainTotal.toFixed(2)}h</td><td><button class="remove-btn" onclick="removeDayRow(${idx})">${removeIcon}</button></td>`;
+            tb.appendChild(tr);
+        });
+        document.getElementById('totalRow').innerHTML = `<td colspan="7"><b>TOTAL GÉNÉRAL</b></td><td><b>${totalAudit.toFixed(2)}h</b></td><td class="terrain-h"><b>${totalTerrain.toFixed(2)}h</b></td><td></td>`;
+        document.getElementById('theoreticalHours').textContent=`${theoreticalHours.toFixed(2)}h`;
+        document.getElementById('realizedHours').textContent=`${totalAudit.toFixed(2)}h`;
+        document.getElementById('terrainHours').textContent=`${totalTerrain.toFixed(2)}h`;
+        const terrainPct=totalAudit>0?(totalTerrain/totalAudit*100):0;
+        const terrainIndicator=document.getElementById('terrainIndicator');
+        terrainIndicator.innerHTML=`<b>Temps Terrain :</b> ${terrainPct.toFixed(1)}% du total réalisé (Objectif 50%)`;
+        if(terrainPct>=50&&terrainPct<=55){terrainIndicator.className='indicator-card ok'}else if(terrainPct>=45&&terrainPct<50){terrainIndicator.className='indicator-card warn'}else{terrainIndicator.className='indicator-card bad'}
+        const durationIndicator=document.getElementById('durationIndicator'),delta=totalAudit-theoreticalHours;
+        durationIndicator.innerHTML=`<b>Durée Totale :</b> ${totalAudit.toFixed(2)}h réalisés vs ${theoreticalHours.toFixed(2)}h théoriques`;
+        durationIndicator.className='indicator-card '+(Math.abs(delta)<=0.25?'ok':(Math.abs(delta)<=1?'warn':'bad'));
+    }
+
+    function updateTerrainSlider(index, period, handle, value) {
+        const val = parseInt(value), day = state.days[index];
+        const startKey=`${period}TerrainStartMinutes`, endKey=`${period}TerrainEndMinutes`;
+        if(handle==='start'){if(val>day[endKey])day[endKey]=val;day[startKey]=val}else{if(val<day[startKey])day[startKey]=val;day[endKey]=val}
+        calculateAndRender();
+    }
+    
+    function updateState(index, key, value) { state.days[index][key] = value; calculateAndRender(); }
+    function addDayRow(fraction) {
+        const newDay=emptyDay(fraction), auditHours=fraction*8;
+        if(auditHours>0){const mH=Math.min(4,auditHours);newDay.morningAuditStart="08:30";newDay.morningAuditEnd=decToTime(8.5+mH);newDay.morningTerrainStartMinutes=Math.round((mH*60)/2/15)*15;newDay.morningTerrainEndMinutes=Math.round((mH*60)/15)*15;}
+        if(auditHours>4){const aH=auditHours-4;newDay.afternoonAuditStart="13:30";newDay.afternoonAuditEnd=decToTime(13.5+aH);newDay.afternoonTerrainStartMinutes=Math.round((aH*60)/2/15)*15;newDay.afternoonTerrainEndMinutes=Math.round((aH*60)/15)*15;}
+        state.days.push(newDay); calculateAndRender();
+    }
+    function removeDayRow(index) { state.days.splice(index, 1); calculateAndRender(); }
+    function loadModel() {
+        const n = parseFloat(document.getElementById('totalDays').value) || 0;
+        if (n <= 0) { resetAll(); return; }
+        state.days = []; const fullDays = Math.floor(n);
+        for(let i=0; i<fullDays; i++) addDayRow(1);
+        const partialDayFraction = n - fullDays;
+        if(partialDayFraction > 0) addDayRow(partialDayFraction);
+    }
+    function resetAll() { state.days = []; document.getElementById('totalDays').value = "0"; calculateAndRender(); }
+    
+    function exportToExcel(){
+        const header1=['Jour','MATIN','','','APRES-MIDI','','','TOTAUX JOUR',''];
+        const header2=['','Début Audit','Fin Audit','Terrain','Début Audit','Fin Audit','Terrain','Audit(h)','Terrain(h)'];
+        const rows=state.days.map((d,i)=>{
+            const dayLabel=`Jour ${i+1}`+(d.fraction<1?` (${d.fraction.toFixed(2)} jour)`:'');
+            const morningAuditStartDec=timeToDec(d.morningAuditStart);
+            const morningTerrainStart=d.morningAuditDuration>0?decToTime(morningAuditStartDec+d.morningTerrainStartMinutes/60):"";
+            const morningTerrainEnd=d.morningAuditDuration>0?decToTime(morningAuditStartDec+d.morningTerrainEndMinutes/60):"";
+            const afternoonAuditStartDec=timeToDec(d.afternoonAuditStart);
+            const afternoonTerrainStart=d.afternoonAuditDuration>0?decToTime(afternoonAuditStartDec+d.afternoonTerrainStartMinutes/60):"";
+            const afternoonTerrainEnd=d.afternoonAuditDuration>0?decToTime(afternoonAuditStartDec+d.afternoonTerrainEndMinutes/60):"";
+            const morningTerrainText=d.morningAuditDuration>0?`${morningTerrainStart}-${morningTerrainEnd}`:'-';
+            const afternoonTerrainText=d.afternoonAuditDuration>0?`${afternoonTerrainStart}-${afternoonTerrainEnd}`:'-';
+            return[dayLabel,d.morningAuditStart,d.morningAuditEnd,morningTerrainText,d.afternoonAuditStart,d.afternoonAuditEnd,afternoonTerrainText,d.dayAuditTotal.toFixed(2),d.dayTerrainTotal.toFixed(2)];
+        });
+        const totalAudit=state.days.reduce((s,d)=>s+d.dayAuditTotal,0);
+        const totalTerrain=state.days.reduce((s,d)=>s+d.dayTerrainTotal,0);
+        const footer=['TOTAL','','','','','','',totalAudit.toFixed(2),totalTerrain.toFixed(2)];
+        const aoa=[header1,header2,...rows,footer];
+        const ws=XLSX.utils.aoa_to_sheet(aoa);
+        const wb=XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb,ws,"Plan d'audit");
+        XLSX.writeFile(wb,`Plan_Audit_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+    function exportToPDF(){
+        const html=`<html><head><meta charset="UTF-8"><title>Plan d'Audit</title><style>body{font-family:Arial,sans-serif;margin:20px}table{width:100%;border-collapse:collapse;margin-top:14px;font-size:0.9rem}th,td{border:1px solid #ccc;padding:8px;text-align:center}th{background:#f2f2f2}.tot{font-weight:bold}</style></head><body><h1>Plan d'Audit</h1><table><thead><tr><th>Jour</th><th>Début Matin</th><th>Fin Matin</th><th>Terrain Matin</th><th>Début A-M</th><th>Fin A-M</th><th>Terrain A-M</th><th>Total Audit</th><th>Total Terrain</th></tr></thead><tbody>${state.days.map((d,i)=>{const morningAuditStartDec=timeToDec(d.morningAuditStart);const morningTerrainStart=d.morningAuditDuration>0?decToTime(morningAuditStartDec+d.morningTerrainStartMinutes/60):"";const morningTerrainEnd=d.morningAuditDuration>0?decToTime(morningAuditStartDec+d.morningTerrainEndMinutes/60):"";const afternoonAuditStartDec=timeToDec(d.afternoonAuditStart);const afternoonTerrainStart=d.afternoonAuditDuration>0?decToTime(afternoonAuditStartDec+d.afternoonTerrainStartMinutes/60):"";const afternoonTerrainEnd=d.afternoonAuditDuration>0?decToTime(afternoonAuditStartDec+d.afternoonTerrainEndMinutes/60):"";return`<tr><td>Jour ${i+1}${d.fraction<1?` (${d.fraction.toFixed(2)} j)`:''}</td><td>${d.morningAuditStart||'-'}</td><td>${d.morningAuditEnd||'-'}</td><td>${d.morningAuditDuration>0?`${morningTerrainStart}-${morningTerrainEnd}`:'-'}</td><td>${d.afternoonAuditStart||'-'}</td><td>${d.afternoonAuditEnd||'-'}</td><td>${d.afternoonAuditDuration>0?`${afternoonTerrainStart}-${afternoonTerrainEnd}`:'-'}</td><td>${d.dayAuditTotal.toFixed(2)}h</td><td>${d.dayTerrainTotal.toFixed(2)}h</td></tr>`}).join("")}<tr class="tot"><td colspan="7">TOTAL</td><td>${state.days.reduce((s,d)=>s+d.dayAuditTotal,0).toFixed(2)}h</td><td>${state.days.reduce((s,d)=>s+d.dayTerrainTotal,0).toFixed(2)}h</td></tr></tbody></table></body></html>`;
+        const w=window.open("","_blank");w.document.write(html);w.document.close();w.focus();w.print();
+    }
+
+    document.getElementById('modelBtn').addEventListener('click', loadModel);
+    document.getElementById('resetBtn').addEventListener('click', resetAll);
+    document.getElementById('totalDays').addEventListener('input', calculateAndRender);
+    window.addDayRow=addDayRow; window.removeDayRow=removeDayRow;
+    window.updateState=updateState; window.updateTerrainSlider=updateTerrainSlider;
+    window.exportToExcel = exportToExcel; window.exportToPDF = exportToPDF;
+    
+    loadModel();
+  </script>
+</body>
+</html>
